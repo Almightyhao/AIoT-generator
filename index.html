@@ -11,7 +11,6 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        /* 載入動畫 */
         .loader {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #6366f1;
@@ -22,20 +21,17 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 原始碼區塊樣式 */
         pre.code-block { white-space: pre-wrap; word-wrap: break-word; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; }
         
-        /* 捲軸美化 */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        /* 淡入動畫 */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
 
-        /* README 內容樣式 (因為 Tailwind 會重置預設樣式，需手動定義) */
+        /* README 樣式 */
         .readme-content { line-height: 1.6; color: #374151; }
         .readme-content h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 1rem; }
         .readme-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #334155; }
@@ -56,7 +52,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
 
-<div id="app" class="container mx-auto px-4 py-8 max-w-5xl">
+<div id="app" class="container mx-auto px-4 py-8 max-w-7xl">
     
     <header class="mb-8 text-center relative">
         <h1 class="text-3xl font-extrabold text-gray-800 mb-2">
@@ -128,18 +124,19 @@
         <div v-if="apiError" class="mt-2 text-xs text-red-500">{{ apiError }}</div>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-indigo-300 transition group relative">
+    <div class="grid md:grid-cols-3 gap-4 mb-6">
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-indigo-300 transition group relative flex flex-col">
             <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
-                <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs mr-2">PDF</span> 拖曳上傳 (支援多檔)
+                <span class="bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs mr-2">PDF</span> 檔案上傳
             </h2>
-            <div class="border-2 border-dashed border-gray-200 rounded-lg h-32 flex flex-col items-center justify-center bg-gray-50 group-hover:bg-indigo-50/20 transition">
+            <div class="border-2 border-dashed border-gray-200 rounded-lg flex-1 flex flex-col items-center justify-center bg-gray-50 group-hover:bg-indigo-50/20 transition min-h-[160px] relative">
                 <input type="file" multiple accept="application/pdf" @change="handleFiles" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                 <div v-if="files.length === 0" class="text-gray-400 text-center pointer-events-none">
                     <svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <span class="text-xs">點擊或拖曳檔案</span>
+                    <span class="text-xs">拖曳多個 PDF 至此</span>
                 </div>
-                <div v-else class="w-full px-4 h-full overflow-y-auto custom-scrollbar py-2">
+                <div v-else class="w-full px-4 h-full overflow-y-auto custom-scrollbar py-2 z-20">
                     <div v-for="(f, i) in files" :key="i" class="text-xs text-gray-600 flex items-center mb-1">
                         <svg class="w-3 h-3 mr-1 text-red-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>
                         <span class="truncate">{{ f.name }}</span>
@@ -148,23 +145,36 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-indigo-300 transition">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-purple-300 transition flex flex-col">
+            <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="bg-purple-100 text-purple-600 px-2 py-0.5 rounded text-xs mr-2">DB</span> 資料庫貼上
+                </div>
+                <select v-model="dbSource" class="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white focus:outline-none focus:border-purple-500">
+                    <option value="UpToDate">UpToDate</option>
+                    <option value="Micromedex">Micromedex</option>
+                    <option value="Other Database">其他資料庫</option>
+                </select>
+            </h2>
+            <textarea v-model="dbInput" class="w-full flex-1 p-3 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-purple-500 outline-none resize-none bg-gray-50 min-h-[160px]" placeholder="在此貼上 UpToDate 或 Micromedex 的文字內容..."></textarea>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-indigo-300 transition flex flex-col">
             <h2 class="text-sm font-bold text-gray-700 mb-3 flex items-center">
                 <span class="bg-blue-100 text-blue-600 px-2 py-0.5 rounded text-xs mr-2">TXT</span> 補充指令
             </h2>
-            <textarea v-model="textInput" class="w-full h-32 p-3 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none resize-none bg-gray-50" placeholder="例如：請加強關於「副作用」的描述..."></textarea>
+            <textarea v-model="textInput" class="w-full flex-1 p-3 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-indigo-500 outline-none resize-none bg-gray-50 min-h-[160px]" placeholder="例如：請針對腎功能不全患者的劑量調整做詳細說明..."></textarea>
         </div>
     </div>
 
     <div class="text-center mb-10">
-        <button @click="processAll" :disabled="isProcessing || (!files.length && !textInput) || !selectedModel" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center mx-auto text-sm">
+        <button @click="processAll" :disabled="isProcessing || (!files.length && !textInput && !dbInput) || !selectedModel" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center mx-auto text-sm">
             <span v-if="isProcessing" class="loader border-white border-t-transparent mr-2 w-4 h-4"></span>
             {{ isProcessing ? processingStatus : '🚀 生成原始 Markdown 條目' }}
         </button>
     </div>
 
     <div v-if="results.length > 0" class="space-y-6 animate-fade-in-up">
-        
         <div class="flex justify-between items-center px-2">
             <h2 class="text-xl font-bold text-gray-800">生成結果 ({{ results.length }})</h2>
             <button @click="downloadExcel" class="text-sm bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow flex items-center transition">
@@ -174,7 +184,6 @@
         </div>
 
         <div v-for="(item, index) in results" :key="index" class="bg-white rounded-xl shadow border border-gray-200 overflow-hidden">
-            
             <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center group">
                 <div class="font-bold text-gray-700 text-sm truncate pr-4" title="Title 欄位">
                     <span class="text-indigo-500 mr-2">TITLE:</span> {{ item.title }}
@@ -188,7 +197,6 @@
                     </span>
                 </button>
             </div>
-
             <div class="relative group">
                 <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button @click="copyText(item.content, 'content-' + index)" class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded shadow flex items-center">
@@ -221,14 +229,19 @@
             const modelList = ref([]);
             const selectedModel = ref('');
             const apiError = ref('');
+            
             const files = ref([]);
             const textInput = ref('');
+            // 🟢 新增：資料庫貼上與來源選擇
+            const dbInput = ref('');
+            const dbSource = ref('UpToDate');
+
             const isProcessing = ref(false);
             const processingStatus = ref('');
             const results = ref([]);
             const copyStatus = ref({});
 
-            // 🟢 新增：README 相關狀態
+            // README 相關狀態
             const showReadme = ref(false);
             const readmeContent = ref('');
             const readmeLoading = ref(false);
@@ -241,55 +254,30 @@
 
             watch(apiKey, (newVal) => localStorage.setItem(STORAGE_KEY, newVal));
 
-            // 🟢 新增：切換 README 顯示與抓取邏輯
             const toggleReadme = async () => {
-                if (showReadme.value) {
-                    showReadme.value = false;
-                    return;
-                }
-                
+                if (showReadme.value) { showReadme.value = false; return; }
                 showReadme.value = true;
-                
-                // 如果已經抓過，就不重新抓
                 if (!readmeContent.value) {
-                    readmeLoading.value = true;
-                    readmeError.value = '';
-                    
+                    readmeLoading.value = true; readmeError.value = '';
                     try {
-                        // 重點：必須使用 GitHub 的 raw user content 網址，才能抓到純 Markdown
                         const githubRawUrl = 'https://raw.githubusercontent.com/Almightyhao/AIoT-generator/main/README.md';
                         const response = await fetch(githubRawUrl);
-                        
-                        if (!response.ok) {
-                            throw new Error(`無法讀取 GitHub 檔案 (Status: ${response.status})`);
-                        }
-                        
+                        if (!response.ok) throw new Error(`Status: ${response.status}`);
                         readmeContent.value = await response.text();
                     } catch (err) {
-                        console.error(err);
-                        readmeError.value = '讀取說明文件失敗，請確認網路連線或 GitHub 連結是否正確。';
-                    } finally {
-                        readmeLoading.value = false;
-                    }
+                        readmeError.value = '讀取說明文件失敗，請確認網路連線。';
+                    } finally { readmeLoading.value = false; }
                 }
             };
 
-            // 🟢 新增：渲染 README (Markdown -> HTML)
-            const renderReadme = (text) => {
-                if (!text) return '';
-                // 使用 marked.js 解析
-                return marked.parse(text);
-            };
+            const renderReadme = (text) => text ? marked.parse(text) : '';
 
             const copyText = async (text, id) => {
                 try {
                     await navigator.clipboard.writeText(text);
                     copyStatus.value[id] = true;
                     setTimeout(() => { copyStatus.value[id] = false; }, 2000);
-                } catch (err) {
-                    console.error('Copy failed', err);
-                    alert('複製失敗，請手動選取複製');
-                }
+                } catch (err) { alert('複製失敗'); }
             };
 
             const detectModels = async () => {
@@ -325,12 +313,23 @@
                 isProcessing.value = true; results.value = []; apiError.value = '';
                 try {
                     let fullContext = "";
+                    
+                    // 1. 處理 PDF
                     for (let i = 0; i < files.value.length; i++) {
                         processingStatus.value = `讀取中... ${files.value[i].name}`;
                         const content = await parsePdf(files.value[i]);
                         fullContext += `\n=== FILE_START: ${files.value[i].name} ===\n${content}\n=== FILE_END ===\n`;
                     }
-                    if (textInput.value) fullContext += `\n=== USER_INSTRUCTION ===\n${textInput.value}\n`;
+
+                    // 2. 處理資料庫貼上內容 (視為獨立檔案)
+                    if (dbInput.value.trim()) {
+                        fullContext += `\n=== FILE_START: ${dbSource.value} Content ===\n${dbInput.value}\n=== FILE_END ===\n`;
+                    }
+
+                    // 3. 處理補充指令
+                    if (textInput.value.trim()) {
+                        fullContext += `\n=== USER_INSTRUCTION ===\n${textInput.value}\n`;
+                    }
 
                     processingStatus.value = `AI 生成中...`;
                     const entries = await callGeminiAPI(fullContext);
@@ -350,9 +349,9 @@
                        - 使用 '-' 或 '*' 標示清單
                        - 使用 '**粗體**' 強調重點
                        - 遇到表格請轉為 Markdown Table
-                    3. **完整性**：保留所有細節、定義、步驟。
+                    3. **完整性**：保留所有細節、定義、步驟。同一藥品的不同劑量請合併於同一條目。
                     4. **格式**：輸出純 JSON Array: [{"title": "...", "content": "..."}]。
-                    5. **引用**：文末加上 *參考資料：[檔名]*。
+                    5. **引用**：文末加上 *參考資料：[檔名]*。若來自 UpToDate/Micromedex，請標註資料庫名稱。
                 `;
 
                 let modelName = selectedModel.value;
@@ -382,9 +381,8 @@
 
             return { 
                 apiKey, showKey, isCheckingModel, modelList, selectedModel, apiError, detectModels, 
-                files, textInput, handleFiles, processAll, isProcessing, processingStatus, results, 
+                files, textInput, dbInput, dbSource, handleFiles, processAll, isProcessing, processingStatus, results, 
                 downloadExcel, copyText, copyStatus,
-                // 回傳給 Template 使用的新變數
                 showReadme, toggleReadme, readmeContent, readmeLoading, readmeError, renderReadme
             };
         }
