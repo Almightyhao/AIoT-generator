@@ -156,7 +156,7 @@
                     <option value="Other Database">其他資料庫</option>
                 </select>
             </h2>
-            <textarea v-model="dbInput" class="w-full flex-1 p-3 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-purple-500 outline-none resize-none bg-gray-50 min-h-[160px]" placeholder="在此貼上 UpToDate 或 Micromedex 的文字內容..."></textarea>
+            <textarea v-model="dbInput" class="w-full flex-1 p-3 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-purple-500 outline-none resize-none bg-gray-50 min-h-[160px]" placeholder="在此貼上 UpToDate 或 Micromedex 的文字內容... (若空白將忽略此來源)"></textarea>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:border-indigo-300 transition flex flex-col">
@@ -168,6 +168,7 @@
     </div>
 
     <div class="flex justify-center items-center gap-4 mb-10">
+        
         <button 
             @click="clearAll" 
             :disabled="isProcessing"
@@ -242,8 +243,7 @@
             const selectedModel = ref('');
             const apiError = ref('');
             
-            // 🟢 新增 fileInputRef 用於重置 input 元素
-            const fileInputRef = ref(null);
+            const fileInputRef = ref(null); // DOM Ref
             const files = ref([]);
             const textInput = ref('');
             const dbInput = ref('');
@@ -266,18 +266,16 @@
 
             watch(apiKey, (newVal) => localStorage.setItem(STORAGE_KEY, newVal));
 
-            // 🟢 新增：清除所有內容的函式
+            // 清除功能
             const clearAll = () => {
                 if(confirm('確定要清除所有上傳檔案、文字輸入與生成結果嗎？')) {
-                    // 清空狀態變數
                     files.value = [];
                     dbInput.value = '';
                     textInput.value = '';
                     results.value = [];
                     apiError.value = '';
                     processingStatus.value = '';
-                    
-                    // 重置檔案上傳 input (重要)
+                    // 重置檔案上傳 input
                     if (fileInputRef.value) {
                         fileInputRef.value.value = '';
                     }
@@ -350,6 +348,7 @@
                         fullContext += `\n=== FILE_START: ${files.value[i].name} ===\n${content}\n=== FILE_END ===\n`;
                     }
 
+                    // 僅當 dbInput 不為空時才傳送
                     if (dbInput.value.trim()) {
                         fullContext += `\n=== FILE_START: ${dbSource.value} Content ===\n${dbInput.value}\n=== FILE_END ===\n`;
                     }
@@ -378,7 +377,7 @@
                        - 遇到表格請轉為 Markdown Table
                     3. **完整性**：保留所有細節、定義、步驟。同一藥品的不同劑量請合併於同一條目。
                     4. **格式**：輸出純 JSON Array: [{"title": "...", "content": "..."}]。
-                    5. **引用**：文末加上 *參考資料：[檔名]*。若來自 UpToDate/Micromedex，請標註資料庫名稱。
+                    5. **引用**：文末必須加上 *參考資料：[來源]*。注意：只有當內容確實來自該來源（如 FILE_START 標記）時才可引用，若無相關內容請勿捏造來源。
                 `;
 
                 let modelName = selectedModel.value;
@@ -411,7 +410,7 @@
                 files, textInput, dbInput, dbSource, handleFiles, processAll, isProcessing, processingStatus, results, 
                 downloadExcel, copyText, copyStatus,
                 showReadme, toggleReadme, readmeContent, readmeLoading, readmeError, renderReadme,
-                clearAll, fileInputRef // 回傳 clearAll 和 ref
+                clearAll, fileInputRef
             };
         }
     }).mount('#app');
