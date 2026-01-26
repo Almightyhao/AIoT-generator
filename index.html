@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
         /* 載入動畫 */
@@ -21,8 +22,8 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 讓 pre 區塊保留換行並自動換行 */
-        pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; }
+        /* 原始碼區塊樣式 */
+        pre.code-block { white-space: pre-wrap; word-wrap: break-word; font-family: 'Menlo', 'Monaco', 'Courier New', monospace; }
         
         /* 捲軸美化 */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -33,20 +34,69 @@
         /* 淡入動畫 */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        /* README 內容樣式 (因為 Tailwind 會重置預設樣式，需手動定義) */
+        .readme-content { line-height: 1.6; color: #374151; }
+        .readme-content h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 1rem; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.5rem; margin-top: 1rem; }
+        .readme-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #334155; }
+        .readme-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.2rem; margin-bottom: 0.5rem; color: #475569; }
+        .readme-content p { margin-bottom: 1rem; }
+        .readme-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .readme-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .readme-content li { margin-bottom: 0.25rem; }
+        .readme-content a { color: #2563eb; text-decoration: underline; }
+        .readme-content code { background-color: #f1f5f9; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; color: #dc2626; font-size: 0.9em; }
+        .readme-content pre { background-color: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
+        .readme-content pre code { background-color: transparent; color: inherit; padding: 0; }
+        .readme-content blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; background-color: #eff6ff; padding: 0.5rem 1rem; margin-bottom: 1rem; border-radius: 0 0.5rem 0.5rem 0; color: #1e40af; }
+        .readme-content table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; }
+        .readme-content th, .readme-content td { border: 1px solid #cbd5e1; padding: 0.5rem; text-align: left; }
+        .readme-content th { background-color: #f1f5f9; font-weight: 600; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
 
 <div id="app" class="container mx-auto px-4 py-8 max-w-5xl">
     
-    <header class="mb-8 text-center">
+    <header class="mb-8 text-center relative">
         <h1 class="text-3xl font-extrabold text-gray-800 mb-2">
             📝 AIoT 知識條目生成器 (原始碼複製版)
         </h1>
-        <p class="text-gray-500 text-sm">
+        <p class="text-gray-500 text-sm mb-4">
             顯示原始 Markdown 符號 (#, *, -) • 支援一鍵複製 • 合併模式
         </p>
+        
+        <div class="flex justify-center">
+            <button @click="toggleReadme" class="flex items-center text-sm font-medium text-indigo-600 bg-white hover:bg-indigo-50 px-5 py-2.5 rounded-full transition shadow-sm border border-indigo-200 ring-1 ring-indigo-100">
+                <span class="mr-2 text-lg">📖</span> 
+                {{ showReadme ? '隱藏使用說明' : '閱讀使用說明 (README)' }}
+            </button>
+        </div>
     </header>
+
+    <transition name="fade">
+        <div v-if="showReadme" class="mb-8 bg-white rounded-xl shadow-lg border border-indigo-100 overflow-hidden">
+            <div class="bg-indigo-50 px-6 py-3 border-b border-indigo-100 flex justify-between items-center">
+                <span class="font-bold text-indigo-800 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    使用說明文件
+                </span>
+                <a href="https://github.com/Almightyhao/AIoT-generator/blob/main/README.md" target="_blank" class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center bg-white px-2 py-1 rounded border border-indigo-200">
+                    前往 GitHub 查看 <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
+            <div class="p-8 max-h-[600px] overflow-y-auto custom-scrollbar bg-white">
+                <div v-if="readmeLoading" class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <div class="loader mb-3 w-8 h-8 border-4 border-indigo-200 border-t-indigo-600"></div>
+                    <p>正在從 GitHub 讀取最新指引...</p>
+                </div>
+                <div v-else-if="readmeError" class="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg text-center">
+                    ⚠️ {{ readmeError }}
+                </div>
+                <div v-else class="readme-content prose prose-indigo max-w-none" v-html="renderReadme(readmeContent)"></div>
+            </div>
+        </div>
+    </transition>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
         <div class="flex flex-col md:flex-row gap-4">
@@ -57,7 +107,7 @@
                         :type="showKey ? 'text' : 'password'" 
                         v-model="apiKey" 
                         @blur="detectModels"
-                        placeholder="在此貼上 Key..." 
+                        placeholder="在此貼上 Key (AIza...)" 
                         class="w-full pl-3 pr-10 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
                     >
                     <button @click="showKey = !showKey" class="absolute right-2 top-2 text-gray-400 hover:text-gray-600">
@@ -150,8 +200,7 @@
                         </span>
                     </button>
                 </div>
-                
-                <pre class="p-5 text-sm text-gray-800 bg-gray-50/50 font-mono leading-relaxed">{{ item.content }}</pre>
+                <pre class="code-block p-5 text-sm text-gray-800 bg-gray-50/50 leading-relaxed">{{ item.content }}</pre>
             </div>
         </div>
     </div>
@@ -177,9 +226,13 @@
             const isProcessing = ref(false);
             const processingStatus = ref('');
             const results = ref([]);
-            
-            // 複製按鈕的狀態管理
             const copyStatus = ref({});
+
+            // 🟢 新增：README 相關狀態
+            const showReadme = ref(false);
+            const readmeContent = ref('');
+            const readmeLoading = ref(false);
+            const readmeError = ref('');
 
             onMounted(() => {
                 const storedKey = localStorage.getItem(STORAGE_KEY);
@@ -188,7 +241,46 @@
 
             watch(apiKey, (newVal) => localStorage.setItem(STORAGE_KEY, newVal));
 
-            // 複製功能
+            // 🟢 新增：切換 README 顯示與抓取邏輯
+            const toggleReadme = async () => {
+                if (showReadme.value) {
+                    showReadme.value = false;
+                    return;
+                }
+                
+                showReadme.value = true;
+                
+                // 如果已經抓過，就不重新抓
+                if (!readmeContent.value) {
+                    readmeLoading.value = true;
+                    readmeError.value = '';
+                    
+                    try {
+                        // 重點：必須使用 GitHub 的 raw user content 網址，才能抓到純 Markdown
+                        const githubRawUrl = 'https://raw.githubusercontent.com/Almightyhao/AIoT-generator/main/README.md';
+                        const response = await fetch(githubRawUrl);
+                        
+                        if (!response.ok) {
+                            throw new Error(`無法讀取 GitHub 檔案 (Status: ${response.status})`);
+                        }
+                        
+                        readmeContent.value = await response.text();
+                    } catch (err) {
+                        console.error(err);
+                        readmeError.value = '讀取說明文件失敗，請確認網路連線或 GitHub 連結是否正確。';
+                    } finally {
+                        readmeLoading.value = false;
+                    }
+                }
+            };
+
+            // 🟢 新增：渲染 README (Markdown -> HTML)
+            const renderReadme = (text) => {
+                if (!text) return '';
+                // 使用 marked.js 解析
+                return marked.parse(text);
+            };
+
             const copyText = async (text, id) => {
                 try {
                     await navigator.clipboard.writeText(text);
@@ -248,7 +340,6 @@
             };
 
             const callGeminiAPI = async (content) => {
-                // 提示詞：強調合併、Markdown 格式
                 const systemPrompt = `
                     你是一個專業的知識庫架構師。將輸入文件轉換為 RAG 知識條目。
                     
@@ -289,7 +380,13 @@
                 XLSX.writeFile(wb, `AIoT_Knowledge_${new Date().toISOString().slice(0,10)}.xlsx`);
             };
 
-            return { apiKey, showKey, isCheckingModel, modelList, selectedModel, apiError, detectModels, files, textInput, handleFiles, processAll, isProcessing, processingStatus, results, downloadExcel, copyText, copyStatus };
+            return { 
+                apiKey, showKey, isCheckingModel, modelList, selectedModel, apiError, detectModels, 
+                files, textInput, handleFiles, processAll, isProcessing, processingStatus, results, 
+                downloadExcel, copyText, copyStatus,
+                // 回傳給 Template 使用的新變數
+                showReadme, toggleReadme, readmeContent, readmeLoading, readmeError, renderReadme
+            };
         }
     }).mount('#app');
 </script>
