@@ -1,5 +1,6 @@
 # 🏥 AIoT 專家知識庫：知識條目生成工具使用指南
-## 使用界面介紹影片可參閱:https://youtu.be/tMkqqWCIlro
+
+## 使用[AIoT知識條目生成器界面介紹影片](https://youtu.be/tMkqqWCIlro)可參閱
 
 ## 1. 專案簡介與目的
 本工具旨在協助藥師與臨床醫療人員，將臨床指引 (Guidelines)、標準作業程序 (SOP) 或教科書內容，利用 AI 自動轉換為符合 RAG (檢索增強生成) 規範的結構化資料。
