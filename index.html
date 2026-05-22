@@ -243,7 +243,7 @@
             const selectedModel = ref('');
             const apiError = ref('');
             
-            const fileInputRef = ref(null); // DOM Ref
+            const fileInputRef = ref(null);
             const files = ref([]);
             const textInput = ref('');
             const dbInput = ref('');
@@ -260,7 +260,6 @@
             const readmeError = ref('');
 
             onMounted(() => {
-                // 新增 Try-Catch 避免 Safari 私密瀏覽模式阻擋 LocalStorage 導致崩潰
                 try {
                     const storedKey = localStorage.getItem(STORAGE_KEY);
                     if (storedKey) { 
@@ -268,20 +267,18 @@
                         detectModels(); 
                     }
                 } catch (error) {
-                    console.warn("瀏覽器隱私設定阻擋了 LocalStorage 的讀取", error);
+                    console.warn("LocalStorage error", error);
                 }
             });
 
             watch(apiKey, (newVal) => {
-                // 新增 Try-Catch 保護 LocalStorage 寫入
                 try {
                     localStorage.setItem(STORAGE_KEY, newVal);
                 } catch (error) {
-                    console.warn("瀏覽器隱私設定阻擋了 LocalStorage 的寫入", error);
+                    console.warn("LocalStorage write error", error);
                 }
             });
 
-            // 清除功能
             const clearAll = () => {
                 if(confirm('確定要清除所有上傳檔案、文字輸入與生成結果嗎？')) {
                     files.value = [];
@@ -290,7 +287,6 @@
                     results.value = [];
                     apiError.value = '';
                     processingStatus.value = '';
-                    // 重置檔案上傳 input
                     if (fileInputRef.value) {
                         fileInputRef.value.value = '';
                     }
@@ -327,7 +323,8 @@
                 if (!apiKey.value) return;
                 isCheckingModel.value = true; apiError.value = ''; modelList.value = [];
                 try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.value}`);
+                    // 加入 trim() 防呆
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey.value.trim()}`);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error.message);
                     const available = data.models.filter(m => m.name.includes('gemini') && m.supportedGenerationMethods.includes('generateContent'));
@@ -363,7 +360,6 @@
                         fullContext += `\n=== FILE_START: ${files.value[i].name} ===\n${content}\n=== FILE_END ===\n`;
                     }
 
-                    // 僅當 dbInput 不為空時才傳送
                     if (dbInput.value.trim()) {
                         fullContext += `\n=== FILE_START: ${dbSource.value} Content ===\n${dbInput.value}\n=== FILE_END ===\n`;
                     }
@@ -404,14 +400,19 @@
                 let modelName = selectedModel.value;
                 if (!modelName.startsWith('models/')) modelName = `models/${modelName}`;
                 
-                // 修正 Developer Instruction 不支援錯誤，將系統指令直接混入 prompt
-                const combinedContent = `${systemPrompt}\n\n=== 以下為需要處理的原始資料 ===\n${content}`;
+                // 【核心修正 1】過濾 PDF 可能夾帶的異常不可見控制字元 (如 Null byte)，防止觸發 Invalid Argument
+                const safeContent = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+                const combinedContent = `${systemPrompt}\n\n=== 以下為需要處理的原始資料 ===\n${safeContent}`;
 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey.value}`, {
+                // 【核心修正 2】URL 的 key 加上 .trim() 確保乾淨
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey.value.trim()}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: combinedContent }] }],
-                        // 移除了 response_mime_type 避免 JSON mode 不支援的問題
+                        // 【核心修正 3】明確加上 role: "user" 以符合部分模型的嚴格格式要求
+                        contents: [{ 
+                            role: "user",
+                            parts: [{ text: combinedContent }] 
+                        }],
                         generationConfig: { temperature: 0.2 } 
                     })
                 });
